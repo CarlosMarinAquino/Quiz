@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz de Química</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un fondo suave para la página */
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+        }
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent; /* Borde inicial transparente */
+        }
+        .option-btn:hover {
+            border-color: #60a5fa; /* Azul claro al pasar el mouse */
+            background-color: #eff6ff; /* Fondo azul muy claro */
+        }
+        .option-btn.selected-correct {
+            background-color: #10B981; /* Verde esmeralda */
+            color: white;
+            border-color: #059669; /* Verde oscuro */
+        }
+        .option-btn.selected-incorrect {
+            background-color: #EF4444; /* Rojo */
+            color: white;
+            border-color: #DC2626; /* Rojo oscuro */
+        }
+        .option-btn.actual-correct {
+            background-color: #A7F3D0; /* Verde muy claro para la correcta no seleccionada */
+            color: #065F46; /* Texto verde oscuro */
+            border-color: #10B981; /* Borde verde esmeralda */
+        }
+        .option-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+        .feedback-container {
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            min-height: 100px; /* Para evitar saltos de diseño */
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .feedback-correct {
+            background-color: #D1FAE5; /* Verde claro */
+            color: #065F46; /* Verde oscuro */
+            border-left: 5px solid #10B981;
+        }
+        .feedback-incorrect {
+            background-color: #FEE2E2; /* Rojo claro */
+            color: #991B1B; /* Rojo oscuro */
+            border-left: 5px solid #EF4444;
+        }
+        #next-question-btn {
+            box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div id="quiz-container" class="quiz-container max-w-2xl w-full p-6 sm:p-8 md:p-10">
+        <div id="question-header" class="mb-6">
+            <div id="question-number" class="text-sm font-medium text-blue-600 mb-1"></div>
+            <div id="question-text" class="text-lg sm:text-xl font-semibold text-gray-800"></div>
+        </div>
+
+        <div id="options-container" class="space-y-3 mb-6">
+            </div>
+
+        <div id="feedback-container" class="feedback-container mb-6">
+            </div>
+
+        <button id="next-question-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg transition duration-150 ease-in-out hidden">
+            Siguiente Pregunta
+        </button>
+
+        <div id="quiz-end-message" class="text-center p-6 bg-green-50 border border-green-300 text-green-700 rounded-lg hidden">
+            <h2 class="text-2xl font-bold mb-3">¡Quiz Completado!</h2>
+            <p id="score-message" class="text-lg"></p>
+            <button id="restart-quiz-btn" class="mt-6 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition duration-150 ease-in-out">
+                Reiniciar Quiz
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- Elementos del DOM ---
+        const questionNumberEl = document.getElementById('question-number');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainerEl = document.getElementById('options-container');
+        const feedbackContainerEl = document.getElementById('feedback-container');
+        const nextButtonEl = document.getElementById('next-question-btn');
+        const quizEndMessageEl = document.getElementById('quiz-end-message');
+        const scoreMessageEl = document.getElementById('score-message');
+        const restartButtonEl = document.getElementById('restart-quiz-btn');
+
+        // --- Datos del Quiz ---
+        // Puedes agregar más preguntas aquí siguiendo el mismo formato.
+        const quizData = [
+            {
+                question: "¿Qué reflejan las diferencias en las propiedades de los sólidos, líquidos y gases, según las fuentes?",
+                options: [
+                    { text: "La composición elemental de las sustancias.", id: "a" },
+                    { text: "La intensidad de las fuerzas de atracción entre las partículas.", id: "b" },
+                    { text: "El tipo de reacciones químicas que pueden experimentar.", id: "c" },
+                    { text: "La masa molar de las sustancias.", id: "d" }
+                ],
+                correctAnswer: "b",
+                justification: "Las fuentes indican explícitamente que las diferencias en las propiedades de los sólidos, líquidos o gases reflejan la intensidad de las fuerzas de atracción entre los átomos, las moléculas o los iones que componen cada fase. La opción (a) es incorrecta, ya que sustancias con la misma composición elemental pueden existir en diferentes estados con propiedades distintas (ej. H₂O sólido, líquido, gas). La opción (c) describe propiedades químicas, no físicas como los estados de la materia. La opción (d) puede influir en algunas propiedades, pero la causa fundamental de las diferencias de estado son las fuerzas interpartícula, no directamente solo la masa molar."
+            },
+            {
+                question: "¿Qué tipo de fuerzas son las responsables del comportamiento de los líquidos y sólidos y determinan muchas de sus propiedades físicas, según las fuentes?",
+                options: [
+                    { text: "Fuerzas intramoleculares.", id: "a" },
+                    { text: "Fuerzas nucleares.", id: "b" },
+                    { text: "Fuerzas intermoleculares.", id: "c" },
+                    { text: "Fuerzas gravitacionales.", id: "d" }
+                ],
+                correctAnswer: "c",
+                justification: "Las fuentes definen las fuerzas intermoleculares (FIM) como las fuerzas de atracción entre moléculas (o átomos o iones) y establecen que son responsables del comportamiento de líquidos y sólidos y determinan muchas de sus propiedades físicas. Las fuerzas intramoleculares actúan dentro de una molécula. Las fuerzas nucleares actúan dentro del núcleo atómico, no determinan propiedades macroscópicas. Las fuerzas gravitacionales son insignificantes a escala atómica/molecular en este contexto."
+            },
+            {
+                question: "Según las fuentes, ¿qué se puede deducir acerca de las fuerzas intermoleculares en un líquido a partir de su punto de ebullición?",
+                options: [
+                    { text: "A mayor punto de ebullición, menores fuerzas intermoleculares.", id: "a" },
+                    { text: "El punto de ebullición no tiene relación con las fuerzas intermoleculares.", id: "b" },
+                    { text: "A mayor punto de ebullición, mayores fuerzas intermoleculares.", id: "c" },
+                    { text: "El punto de ebullición solo depende de la presión externa.", id: "d" }
+                ],
+                correctAnswer: "c",
+                justification: "Se necesita energía para superar las FIM para que una sustancia hierva, por lo que las fuerzas intermoleculares más fuertes dan como resultado puntos de ebullición más altos. Las opciones (a) y (b) contradicen esta relación directa. La opción (d) es incorrecta; aunque la presión externa afecta el punto de ebullición, la naturaleza de la sustancia misma (determinada por las FIM) establece el punto de ebullición a una presión dada."
+            },
+            {
+                question: "De acuerdo con las fuentes, ¿qué es una hipótesis en el método científico?",
+                options: [
+                    { text: "Un principio unificador que explica un grupo de hechos y leyes.", id: "a" },
+                    { text: "Un enunciado conciso de una relación que siempre se repite.", id: "b" },
+                    { text: "Una explicación tentativa para una serie de observaciones.", id: "c" },
+                    { text: "La interpretación final de datos experimentales.", id: "d" }
+                ],
+                correctAnswer: "c",
+                justification: "Las fuentes definen una hipótesis como \"una explicación tentativa para cada serie de observaciones\". La opción (a) describe una teoría. La opción (b) describe una ley. La opción (d) es parte del proceso científico, pero la hipótesis es una explicación inicial y tentativa, no la interpretación final."
+            },
+            {
+                question: "Según las fuentes, ¿qué es una ley científica?",
+                options: [
+                    { text: "Una explicación validada que nunca cambia.", id: "a" },
+                    { text: "Un enunciado conciso de una relación recurrente bajo las mismas condiciones.", id: "b" },
+                    { text: "Un modelo físico de un fenómeno natural.", id: "c" },
+                    { text: "Una suposición basada en datos limitados.", id: "d" }
+                ],
+                correctAnswer: "b",
+                justification: "Las fuentes definen una ley como \"un enunciado conciso, verbal o matemático, de una relación entre fenómenos que siempre se repite bajo las mismas condiciones\". La opción (a) es incorrecta; las leyes pueden ser refinadas o modificadas con nueva evidencia. La opción (c) no es una definición general de ley. La opción (d) se acerca más a la definición de hipótesis."
+            },
+            {
+                question: "¿Qué se requiere para que las hipótesis se conviertan en teorías, según las fuentes?",
+                options: [
+                    { text: "Ser publicadas en una revista científica.", id: "a" },
+                    { text: "Ser probadas por un solo investigador.", id: "b" },
+                    { text: "Resistir muchas pruebas experimentales para verificar su validez.", id: "c" },
+                    { text: "Ser aceptadas por la mayoría de la comunidad científica sin pruebas.", id: "d" }
+                ],
+                correctAnswer: "c",
+                justification: "Las fuentes establecen que \"Si las hipótesis resisten muchas pruebas experimentales para verificar su validez se convierten en teorías\". Las opciones (a), (b) y (d) no describen el criterio fundamental mencionado en las fuentes para el desarrollo de una teoría a partir de una hipótesis."
+            },
+            {
+                question: "¿Cómo se clasifican los sólidos cristalinos, según se desprende de las fuentes?",
+                options: [
+                    { text: "Según su color y densidad.", id: "a" },
+                    { text: "Según la naturaleza de las fuerzas que mantienen unidas sus partículas.", id: "b" },
+                    { text: "Según su punto de ebullición.", id: "c" },
+                    { text: "Según su solubilidad en agua.", id: "d" }
+                ],
+                correctAnswer: "b",
+                justification: "Las fuentes mencionan que los sólidos cristalinos se clasifican según la naturaleza de las fuerzas que mantienen unidas sus partículas, y que esta clasificación es la principal responsable de sus propiedades físicas, dando ejemplos como sólidos iónicos y moleculares. Las otras opciones describen propiedades que resultan de esta clasificación, pero no son la base de la clasificación misma."
+            },
+            {
+                question: "Según las fuentes, ¿por qué los sólidos iónicos como el KCl (cloruro de potasio) tienen puntos de fusión elevados?",
+                options: [
+                    { text: "Están compuestos por moléculas neutras con fuerzas intermoleculares débiles.", id: "a" },
+                    { text: "Se mantienen unidos por fuertes atracciones electrostáticas entre iones.", id: "b" },
+                    { text: "Tienen una estructura amorfa.", id: "c" },
+                    { text: "Son buenos conductores de electricidad en estado sólido.", id: "d" }
+                ],
+                correctAnswer: "b",
+                justification: "Las fuentes clasifican los sólidos iónicos, como el KCl, indicando que se mantienen unidos por fuertes atracciones electrostáticas entre iones, lo que les confiere puntos de fusión elevados. La opción (a) describe sólidos moleculares. La opción (c) describe un tipo diferente de sólido. La opción (d) es incorrecta; los sólidos iónicos no conducen electricidad en estado sólido, solo cuando están fundidos o disueltos."
+            },
+            {
+                question: "Considerando la descripción del estudio de la química en las fuentes, ¿cuál de las siguientes es una estrategia recomendada para aprender química activamente?",
+                options: [
+                    { text: "Faltar a clases y solo leer el texto.", id: "a" },
+                    { text: "Esperar hasta la noche antes del examen para estudiar.", id: "b" },
+                    { text: "Resolver los Ejemplos de problemas y Comprobaciones de estudio a lo largo del capítulo.", id: "c" },
+                    { text: "Evitar el uso de MasteringChemistry.", id: "d" }
+                ],
+                correctAnswer: "c",
+                justification: "Las fuentes describen el aprendizaje activo como interaccionar continuamente con las ideas, y específicamente recomiendan ponerse a prueba resolviendo Comprobaciones de conceptos, Ejemplos de problemas y Comprobaciones de estudio. Las otras opciones son opuestas a las recomendaciones."
+            },
+            {
+                question: "Según las fuentes, ¿qué tipo de compuestos se disuelven bien en agua debido a las atracciones ion-dipolo?",
+                options: [
+                    { text: "Compuestos moleculares no polares.", id: "a" },
+                    { text: "Compuestos iónicos.", id: "b" },
+                    { text: "Compuestos con enlaces covalentes puros.", id: "c" },
+                    { text: "Compuestos con enlaces de hidrógeno débiles.", id: "d" }
+                ],
+                correctAnswer: "b",
+                justification: "Las fuentes mencionan que las atracciones ion-dipolo son importantes cuando los compuestos iónicos se disuelven en agua. Los compuestos no polares se disuelven en disolventes no polares. Los enlaces covalentes puros no generan iones ni dipolos fuertes. Los enlaces de hidrógeno son para compuestos polares, pero la pregunta especifica interacciones ion-dipolo."
+            },
+            {
+                "question": "De acuerdo con las fuentes ¿qué es una propiedad física?",
+                "options": [
+                { "text": "Una característica que cambia la composición química de una sustancia.", "id": "a" },
+                { "text": "Una propiedad asociada con la capacidad de reaccionar con otras sustancias.", "id": "b" },
+                { "text": "Una característica de la materia que no está asociada con un cambio en su composición química.", "id": "c" },
+                { "text": "La cantidad de calor liberado o absorbido en una reacción.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes definen las propiedades físicas de la materia como características \"no asociadas con un cambio en su composición química\" [Basado en mi respuesta anterior citando fuente 1]. Las opciones (a) y (b) describen propiedades o cambios químicos. La opción (d) describe un cambio de entalpía relacionado con la energía de las reacciones o procesos pero no es la definición general de propiedad física."
+            },
+            {
+                "question": "¿qué es un cambio físico?",
+                "options": [
+                { "text": "Un cambio que altera la identidad química de las sustancias.", "id": "a" },
+                { "text": "Un proceso donde se forman nuevas sustancias con propiedades diferentes.", "id": "b" },
+                { "text": "Un cambio en el estado o propiedades de la materia sin cambiar su identidad química.", "id": "c" },
+                { "text": "La separación de un compuesto en sus elementos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes indican que un cambio físico ocurre cuando \"cambia el estado o las propiedades de la materia pero sin cambiar la identidad química de las sustancias involucradas\" [Basado en mi respuesta anterior citando fuente 1]. Las opciones (a) (b) y (d) describen cambios químicos."
+            },
+            {
+                "question": "Las fuerzas de van der Waals mencionadas en las fuentes como parte de las fuerzas intermoleculares incluyen:",
+                "options": [
+                { "text": "Solo enlaces de hidrógeno.", "id": "a" },
+                { "text": "Fuerzas de dispersión y atracciones dipolo-dipolo.", "id": "b" },
+                { "text": "Enlaces iónicos y covalentes.", "id": "c" },
+                { "text": "Solo fuerzas ion-dipolo.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes y mi respuesta previa establecen que las fuerzas intermoleculares colectivamente denominadas fuerzas de van der Waals incluyen \"fuerzas de dispersión (entre dipolos temporales) y atracciones dipolo-dipolo (entre moléculas polares)\" [Basado en mi respuesta anterior citando fuente 1]. Los enlaces de hidrógeno son un tipo especialmente fuerte de atracción dipolo-dipolo [Basado en mi respuesta anterior citando fuente 1] no el único componente. Los enlaces iónicos y covalentes son fuerzas intramoleculares o el tipo de enlace en sólidos iónicos/covalentes no FIM [Basado en mi respuesta anterior citando fuente 1 y 8]. Las fuerzas ion-dipolo ocurren entre iones y moléculas polares [Basado en mi respuesta anterior citando fuente 1] no son parte de las fuerzas de van der Waals definidas en el texto."
+            },
+            {
+                "question": "¿qué tipo de interacción intermolecular ocurre específicamente cuando el hidrógeno está unido a F O o N?",
+                "options": [
+                { "text": "Fuerza de dispersión.", "id": "a" },
+                { "text": "Atracción dipolo-dipolo simple.", "id": "b" },
+                { "text": "Enlace de hidrógeno.", "id": "c" },
+                { "text": "Interacción ion-dipolo.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes identifican el enlace de hidrógeno como un tipo \"especialmente fuerte de atracción dipolo-dipolo\" que ocurre \"cuando el hidrógeno se une a F O o N\" [Basado en mi respuesta anterior citando fuente 1]. Las otras opciones describen otros tipos de interacciones intermoleculares que no corresponden a esta descripción específica."
+            },
+            {
+                "question": "El benceno (C₆H₆) disuelve al fenol pero no al cloruro de sodio (NaCl) según un ejercicio en las fuentes14. Esto sugiere que:",
+                "options": [
+                { "text": "El benceno es un disolvente polar y el fenol es no polar.", "id": "a" },
+                { "text": "El benceno es un disolvente no polar y el fenol es polar.", "id": "b" },
+                { "text": "Las fuerzas intermoleculares entre benceno y fenol son más fuertes que entre benceno y NaCl.", "id": "c" },
+                { "text": "La disolución solo depende de la masa molar de las sustancias.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "El ejercicio implica el principio de que \"lo similar disuelve a lo similar\" que se basa en la magnitud relativa de las fuerzas intermoleculares entre soluto y disolvente [Basado en mi respuesta anterior citando fuente 1]. El benceno es típicamente no polar y su capacidad para disolver fenol (que tiene un grupo -OH polar pero una gran porción no polar) pero no el compuesto iónico NaCl sugiere que las interacciones no polares/polares inducidas entre benceno y fenol son favorables mientras que las interacciones ion-no polar entre benceno y NaCl no lo son. Por lo tanto las fuerzas atractivas entre benceno y fenol son suficientes para formar una solución mientras que entre benceno y NaCl no lo son. La opción (a) es incorrecta; el benceno es no polar. La opción (b) podría ser parcialmente cierta (benceno no polar fenol polar) pero la explicación más directa es la comparación de las fuerzas atractivas resultantes. La opción (d) es incorrecta; la solubilidad está relacionada con las interacciones intermoleculares/iónicas no directamente con la masa molar."
+            },
+            {
+                "question": "¿qué tipo de interacciones son importantes cuando los compuestos iónicos se disuelven en agua?",
+                "options": [
+                { "text": "Fuerzas de dispersión.", "id": "a" },
+                { "text": "Enlaces de hidrógeno.", "id": "b" },
+                { "text": "Atracciones dipolo-dipolo.", "id": "c" },
+                { "text": "Atracciones ion-dipolo.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "Las fuentes especifican que \"Las atracciones ion-dipolo son importantes cuando los compuestos iónicos se disuelven en agua\" [Basado en mi respuesta anterior citando fuente 1]. Las otras opciones corresponden a interacciones entre moléculas neutras (dispersión dipolo-dipolo enlace de hidrógeno) o un tipo específico de interacción que no involucra iones y el dipolo del agua de la misma manera directa descrita."
+            },
+            {
+                "question": "¿Cómo se clasifica el ácido acetilsalicílico (aspirina) que tiene un punto de fusión de 135 ºC es moderadamente soluble en alcohol etílico y disolventes no polares según los tipos de enlace mencionados en las fuentes?",
+                "options": [
+                { "text": "Sólido iónico.", "id": "a" },
+                { "text": "Sólido metálico.", "id": "b" },
+                { "text": "Sólido de red covalente.", "id": "c" },
+                { "text": "Sólido molecular.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "Las fuentes describen sólidos iónicos con puntos de fusión elevados (>770 °C como KCl4) y sólidos de red covalente con puntos de fusión muy altos (como arena SiO₂ que funde a altas temperaturas5). Un punto de fusión de 135 ºC es relativamente bajo en comparación. La solubilidad en disolventes no polares y alcohol sugiere que está compuesto por moléculas unidas por fuerzas intermoleculares no por una red iónica o covalente extendida. Las propiedades descritas (punto de fusión moderadamente bajo solubilidad en disolventes orgánicos) son características de un sólido molecular [Basado en mi respuesta anterior citando fuente 8 y el ejemplo de aspirina en fuente 8]. Los sólidos metálicos tienen propiedades de conducción y brillo que no se mencionan aquí."
+            },
+            {
+                "question": "¿en qué dominio de estudio de la química se describe el comportamiento de la materia y la energía a un nivel visible para el ojo humano?",
+                "options": [
+                { "text": "Microscópico.", "id": "a" },
+                { "text": "Simbólico.", "id": "b" },
+                { "text": "Computacional.", "id": "c" },
+                { "text": "Macroscópico.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "Las fuentes describen que los químicos estudian el comportamiento de la materia y la energía en tres dominios: macroscópico microscópico y simbólico15. Las ilustraciones \"de macro a micro\" muestran objetos reconocibles (macroscópico) y su estructura atómica (microscópico)16.... Por lo tanto el dominio visible es el macroscópico. El dominio microscópico se refiere a átomos y moléculas15.... El dominio simbólico utiliza símbolos y ecuaciones15. La química computacional es un campo que utiliza modelos18 no un dominio primario de descripción fenomenológica."
+            },
+            {
+                "question": "¿Qué representa un símbolo químico en el dominio simbólico de la química ?",
+                "options": [
+                { "text": "Un objeto visible de la materia.", "id": "a" },
+                { "text": "Una representación a escala de un átomo.", "id": "b" },
+                { "text": "Una forma simplificada para llevar registros y comunicarse con otros químicos.", "id": "c" },
+                { "text": "La descripción de una reacción química completa.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes mencionan que los químicos utilizan símbolos especializados para hacer anotaciones y simplificar el proceso de llevar registros permitiendo una comunicación clara con otros químicos2. Esto se alinea con la descripción del dominio simbólico que utiliza símbolos para representar el mundo macroscópico y microscópico [108 aunque no se detalla en las fuentes cómo los símbolos representan el microscópico el contexto general de la química lo implica]. Las otras opciones no describen el propósito principal del uso de símbolos individuales en la notación química."
+            },
+            {
+                "question": "¿cómo se relacionan la masa y la masa molar de un compuesto?",
+                "options": [
+                { "text": "La masa molar es la suma de las masas de los reactivos.", "id": "a" },
+                { "text": "La masa molar permite relacionar la masa de una muestra con el número de moles de partículas.", "id": "b" },
+                { "text": "La masa de una muestra es siempre igual a su masa molar.", "id": "c" },
+                { "text": "La masa molar solo se usa para calcular el volumen.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes explican el concepto de mol y masa molar19... indicando que la masa puede medirse usando una báscula y que \"Puesto que la masa se relaciona con el número de partículas de la masa molar medir la masa es equivalente a contar el número de partículas o moles\"20. Los ejemplos y ejercicios demuestran cómo calcular entre gramos y moles usando la masa molar como factor de conversión21.... La opción (a) no es la definición de masa molar. La opción (c) es incorrecta; la masa de una muestra dependerá de la cantidad de sustancia presente no es intrínsecamente igual a la masa molar. La opción (d) es incorrecta; la masa molar se usa en diversos cálculos que involucran moles y masa"
+            },
+            {
+                "question": "¿Cuál es el propósito principal de las \"Guías para resolver problemas\" (GPS) en uno de los textos ?",
+                "options": [
+                { "text": "Presentar información teórica avanzada.", "id": "a" },
+                { "text": "Proporcionar las respuestas a todos los problemas del texto.", "id": "b" },
+                { "text": "Guiar visualmente paso a paso a través de estrategias para resolver problemas.", "id": "c" },
+                { "text": "Resumir los conceptos clave al final de cada capítulo.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes describen las Guías para resolver problemas (GPS) como herramientas que \"Guían visualmente paso a paso a través de cada estrategia para resolver problemas\"23. Se reescribieron para esta edición para relacionarse con los pasos de los Ejemplos de problema24 y utilizan guías visuales como bloques de colores25. Las opciones (a) (b) y (d) describen otras secciones del libro (contenido teórico manual de soluciones resúmenes de capítulo)."
+            },
+            {
+                "question": "¿qué es una solución?",
+                "options": [
+                { "text": "Una mezcla heterogénea con composición no uniforme.", "id": "a" },
+                { "text": "Un cambio de fase de líquido a gas.", "id": "b" },
+                { "text": "Una mezcla donde el soluto está uniformemente disperso en el solvente.", "id": "c" },
+                { "text": "Un compuesto iónico disuelto en agua.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes definen las soluciones en el contexto de experimentos donde se observa la formación de soluciones al revolver sustancias en agua26. Se describen como una mezcla donde el soluto se dispersa uniformemente en el solvente. El capítulo sobre soluciones describe disoluciones solubilidad saturación y concentraciones27. Una mezcla heterogénea tiene composición no uniforme28. Un cambio de fase es un proceso físico1. Disolver un compuesto iónico en agua es un ejemplo de formación de una solución pero no la definición general."
+            },
+            {
+                "question": "De acuerdo con las fuentes ¿qué factor influye en si se forma una solución entre un soluto y un solvente?",
+                "options": [
+                { "text": "Únicamente la temperatura.", "id": "a" },
+                { "text": "Únicamente la presión externa.", "id": "b" },
+                { "text": "Las propiedades moleculares de sus componentes y la magnitud relativa de las fuerzas intermoleculares de atracción entre el soluto y el solvente.", "id": "c" },
+                { "text": "Si el solvente es siempre agua.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes establecen que \"Si se forma una solución depende de las propiedades moleculares de sus componentes\" y que \"La magnitud relativa de las fuerzas intermoleculares de atracción entre el soluto y el solvente afecta si la disolución ocurre\" [Basado en mi respuesta anterior citando fuente 1]. La temperatura puede afectar la solubilidad y la presión afecta la solubilidad de gases14 pero no son los únicos factores determinantes de la formación de una solución en general. La opción (d) es incorrecta; se forman soluciones con muchos solventes además del agua14...."
+            },
+            {
+                "question": "¿cómo se relaciona la concentración de una solución con la cantidad de soluto y solvente?",
+                "options": [
+                { "text": "La concentración solo se expresa como porcentaje.", "id": "a" },
+                { "text": "La concentración es la cantidad de soluto disuelto en una cantidad dada de solvente o solución.", "id": "b" },
+                { "text": "La concentración solo se mide en el laboratorio.", "id": "c" },
+                { "text": "La concentración no se puede expresar cuantitativamente.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "El capítulo 8 de una de las fuentes trata sobre soluciones solubilidad saturación y concentraciones27 destacando el uso de factores de conversión de concentración para determinar volumen de solución o masa de soluto27. Se mencionan unidades de concentración como molaridad y porcentaje27.... Aunque no hay una definición textual única de \"concentración\" el contexto y los ejercicios implican que es una medida cuantitativa de la cantidad de soluto en una cantidad de solvente o solución. La preparación de soluciones y la medición de concentración son temas importantes33. Las opciones (a) (c) y (d) son incorrectas ya que la concentración se expresa de diversas formas se puede calcular fuera del laboratorio y es inherentemente cuantitativa."
+            },
+            {
+                "question": "¿Qué son las fuerzas intramoleculares ?",
+                "options": [
+                { "text": "Fuerzas de atracción entre moléculas separadas.", "id": "a" },
+                { "text": "Fuerzas que actúan dentro de una molécula y la mantienen unida.", "id": "b" },
+                { "text": "Fuerzas que determinan el estado físico de una sustancia.", "id": "c" },
+                { "text": "Fuerzas responsables de la tensión superficial.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes y mi respuesta anterior definen las fuerzas intramoleculares como las fuerzas que \"actúan dentro de una molécula y la mantienen unida (como los enlaces covalentes)\" [Basado en mi respuesta anterior citando fuente 1]. Las opciones (a) (c) y (d) describen las fuerzas intermoleculares o sus efectos."
+            },
+            {
+                "question": "¿qué son las propiedades coligativas de las soluciones?",
+                "options": [
+                { "text": "Propiedades que dependen de la identidad del soluto.", "id": "a" },
+                { "text": "Propiedades que dependen del tipo de enlace químico en el soluto.", "id": "b" },
+                { "text": "Propiedades que dependen de la concentración de partículas de soluto no de su identidad.", "id": "c" },
+                { "text": "Propiedades que solo se observan en soluciones saturadas.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "El capítulo 8 describe \"propiedades coligativas\"27 y los ejemplos dados en los ejercicios relacionados como el cálculo de la presión osmótica a partir de la concentración de insulina34 o el cálculo de la masa molar a partir del cambio en el punto de ebullición (Kb propiedad relacionada con la concentración)34 implican que estas propiedades dependen de la cantidad de partículas disueltas. Aunque la definición explícita no está en los fragmentos el tratamiento de estos temas bajo \"propiedades coligativas\" en el capítulo 827 y los tipos de problemas asociados34 sugieren esta dependencia de la concentración de partículas más que de su identidad. (Nota: La definición de que dependen de la concentración de partículas y no de su identidad es un concepto estándar en química coligativa que se alinea con los ejemplos proporcionados en las fuentes)."
+            },
+            {
+                "question": "Las fuentes mencionan que un factor que afecta la velocidad de las reacciones químicas es:",
+                "options": [
+                { "text": "El color de los reactivos.", "id": "a" },
+                { "text": "El tamaño del recipiente de reacción.", "id": "b" },
+                { "text": "La presencia de un catalizador.", "id": "c" },
+                { "text": "La densidad de los productos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "El capítulo 12 de una de las fuentes trata sobre la cinética química y menciona la catálisis (uso de catalizadores)35.... Un ejercicio pide contabilizar el aumento de la velocidad de reacción provocado por un catalizador36 confirmando que los catalizadores afectan la velocidad de reacción. Las otras opciones no se mencionan en las fuentes como factores que afecten la velocidad de reacción."
+            },
+            {
+                "question": "¿qué representa el cociente de reacción (Q) para una reacción reversible?",
+                "options": [
+                { "text": "La constante de equilibrio de la reacción.", "id": "a" },
+                { "text": "El estado de la reacción en un momento dado evaluado a partir de las concentraciones o presiones parciales.", "id": "b" },
+                { "text": "La energía de activación de la reacción.", "id": "c" },
+                { "text": "La velocidad de la reacción directa.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes establecen que \"El estado de una reacción reversible se evalúa convenientemente mediante su cociente de reacción (Q)\"37 y que se deduce directamente de la estequiometría usando concentraciones molares o presiones parciales37. La opción (a) es incorrecta; Q es igual a la constante de equilibrio (K) solo en el equilibrio. La opción (c) está relacionada con la cinética (velocidad) no con el estado de equilibrio. La opción (d) describe solo uno de los componentes cinéticos que determinan el estado de equilibrio no Q en sí."
+            },
+            {
+                "question": "¿Qué indica un valor negativo de la energía libre estándar de Gibbs (ΔG°) según los datos proporcionados en las fuentes sobre termodinámica?",
+                "options": [
+                { "text": "Que la reacción es endotérmica.", "id": "a" },
+                { "text": "Que la reacción no es espontánea en condiciones estándar.", "id": "b" },
+                { "text": "Que la reacción es espontánea en condiciones estándar.", "id": "c" },
+                { "text": "Que la reacción ha alcanzado el equilibrio.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes incluyen ejemplos de cálculo de ΔG° y su interpretación. En el Ejemplo 16.138 se calcula ΔG° = 572 kJ para una reacción y se concluye que \"ambas predicen que el proceso no es espontáneo a temperatura ambiente\" (el valor es positivo). Aunque no hay un ejemplo con un ΔG° negativo explícito el principio termodinámico estándar consistente con la interpretación del ejemplo positivo es que un ΔG° negativo indica espontaneidad en condiciones estándar. (Nota: La fuente explica la no espontaneidad con un valor positivo. La espontaneidad con un valor negativo es el concepto complementario estándar que se desprende lógicamente de la interpretación dada)."
+            },
+            {
+                "question": "¿qué campo interdisciplinar utiliza la comprensión del enlace químico para desarrollar productos farmacéuticos?",
+                "options": [
+                { "text": "Cinética química.", "id": "a" },
+                { "text": "Electroquímica.", "id": "b" },
+                { "text": "Química computacional en el diseño de fármacos.", "id": "c" },
+                { "text": "Espectrometría de masas.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes describen la \"Química computacional en el diseño de fármacos\" como un campo importante que utiliza la comprensión del enlace químico para desarrollar productos farmacéuticos18. Utiliza la biología e implica modelar estructuras para predecir interacciones18. Las otras opciones son áreas de la química pero no se describen específicamente en este contexto de diseño de fármacos utilizando el enlace químico."
+            },
+            {
+                "question": "De acuerdo con las fuentes ¿qué tipo de compuesto se describe como que contiene el grupo funcional -SH enlazado a un átomo de carbono?",
+                "options": [
+                { "text": "Alcohol.", "id": "a" },
+                { "text": "Éter.", "id": "b" },
+                { "text": "Aldehído.", "id": "c" },
+                { "text": "Tiol.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "Las fuentes definen explícitamente un \"tiol\" como un \"Compuesto orgánico que contiene el grupo funcional -SH enlazado a un átomo de carbono\"4.... Las otras opciones corresponden a otros grupos funcionales (-OH para alcohol40 -O- para éter41 -CHO para aldehído42)."
+            },
+            {
+                "question": "¿Cuál es la principal característica estructural de los alcanos según un ejemplo en las fuentes?",
+                "options": [
+                { "text": "Presencia de al menos un enlace doble carbono-carbono.", "id": "a" },
+                { "text": "Presencia de enlaces triples carbono-carbono.", "id": "b" },
+                { "text": "Contienen solo enlaces sencillos carbono-carbono y carbono-hidrógeno.", "id": "c" },
+                { "text": "Siempre forman estructuras cíclicas.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Un ejemplo en las fuentes menciona el heptano (C7H16) y muestra su fórmula condensada con solo enlaces sencillos entre carbonos y con hidrógenos41. Otro ejemplo menciona el propano que \"contiene sólo enlaces sencillos\" a diferencia del propeno (doble enlace) y propino (triple enlace)43. Esto indica que los alcanos se caracterizan por tener solo enlaces sencillos. Las opciones (a) y (b) describen alquenos y alquinos respectivamente43. La opción (d) es incorrecta; si bien existen cicloalcanos el término alcano generalmente incluye cadenas lineales y ramificadas."
+            },
+            {
+                "question": "¿qué tipo de compuestos orgánicos tienen la fórmula C4H10 y pueden existir en diferentes arreglos de átomos como el butano?",
+                "options": [
+                { "text": "Alquenos.", "id": "a" },
+                { "text": "Isómeros.", "id": "b" },
+                { "text": "Alcoholes.", "id": "c" },
+                { "text": "Ésteres.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Una de las fuentes pregunta por la relación entre dos moléculas con la misma fórmula molecular pero diferente fórmula estructural44. Menciona el concepto de \"isómeros estructurales y geométricos de los hidrocarburos\"45. El butano (C4H10) se menciona en el contexto de propiedades físicas4 y es un ejemplo común de un compuesto con isómeros estructurales (n-butano e isobutano). Aunque la palabra \"isómero\" no está directamente vinculada a C4H10 en el fragmento que lo menciona4 la discusión posterior sobre isómeros45 y un ejercicio que pide identificar y describir la relación entre moléculas con la misma fórmula pero diferente estructura44 sugieren que este es el concepto relevante para compuestos con la misma fórmula molecular pero diferentes estructuras."
+            },
+            {
+                "question": "Las fuentes describen un experimento donde se usa acetona en lugar de agua para disolver diferentes sustancias26. Esto se relaciona mejor con el concepto de:",
+                "options": [
+                { "text": "Tensión superficial.", "id": "a" },
+                { "text": "Presión de vapor.", "id": "b" },
+                { "text": "Selección de solvente basado en polaridad y interacciones.", "id": "c" },
+                { "text": "Densidad de los líquidos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "El experimento descrito implica probar la solubilidad de diferentes sustancias en agua y luego en acetona26. Esto se hace para observar qué sustancias son solubles en un solvente polar como el agua y cuáles (posiblemente diferentes) son solubles en un solvente orgánico como la acetona demostrando el principio de \"lo similar disuelve a lo similar\" que depende de las interacciones entre soluto y solvente [Basado en mi respuesta anterior citando fuente 1 y 9]. Las otras opciones (tensión superficial presión de vapor densidad) son propiedades físicas de los líquidos pero no el concepto central que se explora al probar diferentes solventes para la disolución de varias sustancias."
+            },
+            {
+                "question": "¿cuál es el propósito principal de un laboratorio de química general para los estudiantes?",
+                "options": [
+                { "text": "Realizar investigaciones de vanguardia.", "id": "a" },
+                { "text": "Familiarizarse con técnicas de medición y preparación de soluciones.", "id": "b" },
+                { "text": "Inventar nuevos compuestos químicos.", "id": "c" },
+                { "text": "Memorizar las leyes de la química.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Uno de los trabajos prácticos de laboratorio descritos tiene como objetivos que el alumno sea capaz de \"comenzar el en la técnica adecuada de preparación de soluciones a partir de sólidos y líquidos\" y familiarizarse con la \"medición de volúmenes de líquidos\"33.... Esto indica que el laboratorio está diseñado para la práctica de técnicas básicas. Las opciones (a) y (c) son actividades de investigación más avanzadas. La opción (d) es parte del estudio teórico no el propósito principal del trabajo práctico."
+            },
+            {
+                "question": "De acuerdo con las fuentes ¿qué se necesita para determinar el número absoluto de átomos que componen una única molécula de un compuesto covalente además de su fórmula empírica?",
+                "options": [
+                { "text": "Su punto de fusión.", "id": "a" },
+                { "text": "Su masa molecular o masa molar.", "id": "b" },
+                { "text": "Su densidad.", "id": "c" },
+                { "text": "Su solubilidad en agua.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes establecen que \"Para determinar el número absoluto de átomos que componen una única molécula de un compuesto covalente es necesario conocer tanto su fórmula empírica como su masa molecular o masa molar\"47. Las otras opciones son propiedades físicas que no se mencionan en este contexto como necesarias para determinar la fórmula molecular a partir de la empírica."
+            },
+            {
+                "question": "¿cuál es una aplicación práctica de la química orgánica en la vida diaria mencionada en un ejercicio?",
+                "options": [
+                { "text": "La electrólisis del agua.", "id": "a" },
+                { "text": "La acción antiadherente del Teflón®.", "id": "b" },
+                { "text": "La medición de la presión arterial.", "id": "c" },
+                { "text": "La predicción del clima.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Un ejercicio en las fuentes pide dibujar la cadena de Teflón® (un polímero de tetrafluoroeteno) y menciona que se utiliza como recubrimiento antiadherente en sartenes48. Esto es una aplicación práctica directa de un compuesto orgánico (un polímero basado en alquenos halogenados) en la vida diaria. La electrólisis es electroquímica49. La medición de la presión arterial es una aplicación de las propiedades de los gases/presión50. La predicción del clima involucra múltiples disciplinas no específicamente un ejemplo de química orgánica mencionado."
+            },
+            {
+                "question": "Las fuentes describen la glucosa como una unidad monosacárida fundamental en polisacáridos como la celulosa51. ¿Qué tipo de enlace une las unidades de glucosa en la celulosa según se ilustra?",
+                "options": [
+                { "text": "Enlace peptídico.", "id": "a" },
+                { "text": "Enlace éster.", "id": "b" },
+                { "text": "Enlace b-14-glucosídico.", "id": "c" },
+                { "text": "Enlace fosfodiéster.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "La figura 15.6 en las fuentes ilustra la estructura de la celulosa y etiqueta el enlace entre las unidades de glucosa como \"Enlace b-14-glucosídico\"51. Los enlaces peptídicos se encuentran en proteínas los enlaces éster en lípidos (como triacilgliceroles52) y ésteres y los enlaces fosfodiéster en ácidos nucleicos."
+            },
+            {
+                "question": "¿qué tipo de compuesto se forma a partir de cloroeteno (cloruro de vinilo) y se utiliza para fabricar mangueras de jardín?",
+                "options": [
+                { "text": "Polietileno.", "id": "a" },
+                { "text": "Polipropileno.", "id": "b" },
+                { "text": "Cloruro de polivinilo (PVC).", "id": "c" },
+                { "text": "Poliestireno.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Un ejercicio en las fuentes pregunta sobre la manguera de jardín hecha con \"cloruro de polivinilo (PVC) a partir de cloroeteno (cloruro de vinilo)\" y pide dibujar una porción del polímero48. Esto identifica directamente el PVC como el polímero formado a partir del cloroeteno."
+            },
+            {
+                "question": "¿Qué propiedad de los líquidos se relaciona con la resistencia al flujo según las fuerzas intermoleculares?",
+                "options": [
+                { "text": "Tensión superficial.", "id": "a" },
+                { "text": "Presión de vapor.", "id": "b" },
+                { "text": "Viscosidad.", "id": "c" },
+                { "text": "Punto de ebullición.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Mi respuesta previa basada en las fuentes establece que las FIM son responsables de propiedades de los líquidos como la viscosidad (resistencia al flujo) y la tensión superficial [Basado en mi respuesta anterior citando fuente 1]. La opción (a) es la elasticidad de la superficie [Basado en mi respuesta anterior citando fuente 1]. La opción (b) es la presión del vapor en equilibrio con el líquido. La opción (d) es la temperatura a la que la presión de vapor iguala la presión externa."
+            },
+            {
+                "question": "¿cómo se define la estequiometría de una reacción química?",
+                "options": [
+                { "text": "La velocidad a la que se produce la reacción.", "id": "a" },
+                { "text": "Las relaciones cuantitativas entre las cantidades de sustancias consumidas y producidas por la reacción.", "id": "b" },
+                { "text": "El tipo de enlace entre los átomos de los reactivos.", "id": "c" },
+                { "text": "La clasificación de la reacción como ácido-base o redox.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes definen la estequiometría como \"Las relaciones cuantitativas entre las cantidades de sustancias consumidas y producidas por la reacción\"53. También mencionan que la estequiometría se deriva de las palabras griegas para \"elemento\" y \"medida\"53. La opción (a) se relaciona con la cinética química35. La opción (c) describe el enlace químico54. La opción (d) es una clasificación de reacciones55."
+            },
+            {
+                "question": "Uno de los textos está diseñado para estudiantes que se preparan para carreras profesionales relacionadas con la salud como enfermería o nutrición56. ¿Qué enfoque utiliza este libro para relacionar la química con estas áreas?",
+                "options": [
+                { "text": "Evita las aplicaciones a la salud para mantener la pureza de la química.", "id": "a" },
+                { "text": "Relaciona la estructura y comportamiento de la materia con su función en la salud y el ambiente.", "id": "b" },
+                { "text": "Se centra exclusivamente en la química inorgánica aplicada a la medicina.", "id": "c" },
+                { "text": "Utiliza solo ejemplos teóricos sin conexiones prácticas.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "El prefacio del libro Química general orgánica y biológica declara que su objetivo principal es hacer que el estudio de la química sea atractivo \"al relacionar la estructura y comportamiento de la materia con su función en la salud y el ambiente\"56. También incluye secciones tituladas \"La química en la salud\"17.... Las otras opciones contradicen el enfoque declarado del libro."
+            },
+            {
+                "question": "¿qué son los sólidos moleculares?",
+                "options": [
+                { "text": "Sólidos formados por iones unidos por fuerzas electrostáticas.", "id": "a" },
+                { "text": "Sólidos compuestos por átomos individuales unidos por enlaces covalentes.", "id": "b" },
+                { "text": "Sólidos compuestos por moléculas neutras unidas por fuerzas intermoleculares.", "id": "c" },
+                { "text": "Sólidos con estructura desordenada.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Mi respuesta anterior basándose en las fuentes describe los sólidos moleculares como \"compuestos por moléculas neutras unidas por fuerzas intermoleculares que suelen ser más débiles\" en comparación con los sólidos iónicos [Basado en mi respuesta anterior citando fuente 8]. La opción (a) describe sólidos iónicos. La opción (b) describe sólidos de red covalente (como el diamante o el SiO25). La opción (d) describe sólidos amorfos no cristalinos5."
+            },
+            {
+                "question": "Las fuentes mencionan el enlace de hidrógeno como un tipo de fuerza intermolecular. ¿Qué lo hace especialmente fuerte en comparación con otras atracciones dipolo-dipolo?",
+                "options": [
+                { "text": "Involucra la formación de iones temporales.", "id": "a" },
+                { "text": "Ocurre cuando el hidrógeno está unido a átomos pequeños y altamente electronegativos (F O N).", "id": "b" },
+                { "text": "Es más débil que las fuerzas de dispersión.", "id": "c" },
+                { "text": "Solo ocurre en gases nobles.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes y mi respuesta previa identifican el enlace de hidrógeno como un tipo \"especialmente fuerte\" de atracción dipolo-dipolo que ocurre específicamente cuando el hidrógeno se une a F O o N [Basado en mi respuesta anterior citando fuente 1]. Esta unión a elementos pequeños y muy electronegativos crea un dipolo fuerte y permite una atracción direccional fuerte con pares de electrones no enlazantes de átomos F O o N vecinos. Las otras opciones son incorrectas: no involucra iones es más fuerte que las fuerzas de dispersión y no ocurre en gases nobles (que tienen fuerzas de dispersión)."
+            },
+            {
+                "question": "¿qué papel juega la energía en los cambios de fase como la ebullición o la fusión?",
+                "options": [
+                { "text": "La energía se libera para formar los nuevos enlaces.", "id": "a" },
+                { "text": "La energía se absorbe para superar las fuerzas de atracción entre las partículas.", "id": "b" },
+                { "text": "La energía no interviene en los cambios de fase.", "id": "c" },
+                { "text": "La energía solo convierte las moléculas en átomos.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes explican que \"Para que una sustancia cambie de fase (por ejemplo de líquido a gas al hervir) se necesita energía (calor) para superar estas fuerzas de atracción\" [Basado en mi respuesta anterior citando fuente 1]. Los ejercicios también implican el cálculo del \"calor necesario para transformar\" sustancias entre fases59. La opción (a) es incorrecta; en los cambios de fase las partículas se separan los enlaces intramoleculares no se rompen. La opción (c) es incorrecta; la energía (en forma de calor por ejemplo) es fundamental. La opción (d) describe un cambio químico (disociación atómica) no un cambio de fase."
+            },
+            {
+                "question": "Las fuentes mencionan que el agua (18 g/mol) tiene un punto de ebullición más alto que la nafta (C8H18 114 g/mol)60. Esto es un ejemplo de cómo:",
+                "options": [
+                { "text": "La masa molar siempre determina el punto de ebullición.", "id": "a" },
+                { "text": "Las sustancias con menor masa molar siempre tienen puntos de ebullición más bajos.", "id": "b" },
+                { "text": "Las fuerzas intermoleculares (como el enlace de hidrógeno en el agua) pueden tener un impacto más significativo en el punto de ebullición que la masa molar.", "id": "c" },
+                { "text": "La nafta tiene enlaces iónicos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Una pregunta en las fuentes pide explicar por qué el agua con menor masa molar tiene un punto de ebullición más alto que la nafta con mayor masa molar60. La respuesta basada en los conceptos presentados es que el agua forma fuertes enlaces de hidrógeno [Basado en mi respuesta anterior citando fuente 1] mientras que la nafta (un hidrocarburo alcano) solo presenta fuerzas de dispersión más débiles. Esto demuestra que las fuerzas intermoleculares son el factor dominante que determina el punto de ebullición superando el efecto (generalmente menor) del aumento de la masa molar en las fuerzas de dispersión para moléculas no polares. Las opciones (a) y (b) son incorrectas ya que el ejemplo las contradice. La opción (d) es incorrecta; la nafta es un hidrocarburo y tiene enlaces covalentes."
+            },
+            {
+                "question": "¿Cuál de los siguientes NO se menciona en las fuentes como un tipo de reacción química?",
+                "options": [
+                { "text": "Reacción de combinación.", "id": "a" },
+                { "text": "Reacción de descomposición.", "id": "b" },
+                { "text": "Reacción de sustitución sencilla.", "id": "c" },
+                { "text": "Reacción nuclear.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "El capítulo 6 describe la clasificación de los tipos de reacción como combinación descomposición sustitución sencilla y doble y reacciones de combustión61. El capítulo 4 trata sobre química nuclear62 incluyendo el decaimiento radiactivo62 pero no clasifica específicamente las \"reacciones nucleares\" como un tipo de reacción química en el mismo sentido que las listadas en el capítulo 6 (que son transformaciones de la materia que involucran el reordenamiento de átomos a través de enlaces químicos). Las reacciones nucleares implican cambios en el núcleo atómico que es distinto de las reacciones químicas que involucran electrones de valencia."
+            },
+            {
+                "question": "¿cuál es el propósito de los coeficientes en una ecuación química balanceada?",
+                "options": [
+                { "text": "Indicar el estado físico de los reactivos y productos.", "id": "a" },
+                { "text": "Proporcionar los números relativos de las especies químicas involucradas.", "id": "b" },
+                { "text": "Mostrar el tipo de enlace en los reactivos.", "id": "c" },
+                { "text": "Representar la velocidad de la reacción.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes afirman que en una ecuación química balanceada \"Los coeficientes proporcionan los números relativos de estas especies químicas permitiendo una evaluación cuantitativa de las relaciones entre las cantidades de sustancias consumidas y producidas por la reacción\"53. La opción (a) se representa típicamente con subíndices como (s) (l) (g) (ac). La opción (c) no está representada por los coeficientes. La opción (d) se relaciona con la cinética no con los coeficientes estequiométricos."
+            },
+            {
+                "question": "¿cuál es la importancia de la Tabla Periódica para los químicos?",
+                "options": [
+                { "text": "Es una herramienta para dibujar estructuras moleculares.", "id": "a" },
+                { "text": "Es una herramienta fundamental para comprender manejar e interpretar información sobre los elementos.", "id": "b" },
+                { "text": "Se utiliza principalmente para calcular la densidad de las sustancias.", "id": "c" },
+                { "text": "Solo lista los elementos descubiertos recientemente.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Una fuente dedica un capítulo a la Tabla Periódica y la describe como una \"herramienta fundamental de los químicos y su campo de acción\" donde se aprende a \"comprenderla manejarla e interpretarla\"63. Las opciones (a) (c) y (d) no describen el propósito amplio y fundamental de la Tabla Periódica como se presenta en las fuentes."
+            },
+            {
+                "question": "En el contexto de la electrólisis las fuentes mencionan que se producen cambios químicos49. Un ejemplo de un proceso electrolítico mencionado es:",
+                "options": [
+                { "text": "La disolución de azúcar en agua.", "id": "a" },
+                { "text": "La quema de metano.", "id": "b" },
+                { "text": "La electrólisis del cloruro de sodio fundido o acuoso para producir cloro.", "id": "c" },
+                { "text": "La formación de hielo a partir de agua líquida.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes hacen referencia a la electrólisis del cloruro de sodio fundido o acuoso que produce cloro como un ejemplo de proceso electroquímico49... mencionando que se producen reacciones en los electrodos64. La opción (a) es una disolución física. La opción (b) es una reacción de combustión. La opción (d) es un cambio de fase físico."
+            },
+            {
+            "question": "¿qué tipo de compuesto orgánico contiene el grupo funcional carbonilo (C=O) enlazado a dos átomos de carbono?",
+            "options": [
+            { "text": "Aldehído.", "id": "a" },
+            { "text": "Ácido carboxílico.", "id": "b" },
+            { "text": "Éster.", "id": "c" },
+            { "text": "Cetona.", "id": "d" }
+            ],
+            "correctAnswer": "d",
+            "justification": "El capítulo 14 trata sobre aldehídos y cetonas42. Aunque la descripción estructural completa no está en los fragmentos los aldehídos tienen el grupo carbonilo en el extremo de una cadena (enlazado a H y C) mientras que las cetonas tienen el grupo carbonilo entre dos átomos de carbono. Un ejemplo visual en las \"Comprensiones de conceptos\" del capítulo 1442 muestra un aldehído (a) con C=O en el extremo y una cetona (b) con C=O en medio de la cadena de carbonos lo que permite inferir esta distinción."
+            },
+            {
+                "question": "¿qué indican los problemas \"Combinación de ideas\" al final de algunos capítulos?",
+                "options": [
+                { "text": "Son problemas más fáciles para repasar conceptos básicos.", "id": "a" },
+                { "text": "Requieren la aplicación de conceptos de un solo capítulo.", "id": "b" },
+                { "text": "Ponen a prueba la comprensión al integrar temas de varios capítulos.", "id": "c" },
+                { "text": "Son problemas históricos sobre descubrimientos químicos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes describen los conjuntos de problemas llamados \"Combinación de ideas\" como aquellos que \"ponen a prueba su habilidad para resolver problemas que combinan material de más de un capítulo\"6 y que \"Ponen a prueba la comprensión de los conceptos de capítulos previos al integrar temas\"65. Las otras opciones son incorrectas según esta descripción."
+            },
+            {
+                "question": "¿Qué concepto se ilustra al explicar la acción limpiadora de los jabones y detergentes por la estructura de sus moléculas con extremos atraídos por sustancias no polares y por agua polar?",
+                "options": [
+                { "text": "Tensión superficial.", "id": "a" },
+                { "text": "Propiedades coligativas.", "id": "b" },
+                { "text": "Naturaleza anfipática y formación de micelas (implícito).", "id": "c" },
+                { "text": "Presión de vapor.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Mi respuesta previa basada en las fuentes explica la acción limpiadora de jabones/detergentes por tener un extremo atraído por grasa (no polar) y otro por agua (polar) actuando como un puente para solubilizar la suciedad en el agua [Basado en mi respuesta anterior citando fuente 1]. Esta descripción corresponde a las propiedades de las moléculas anfipáticas (que tienen una parte polar y otra no polar) que forman micelas en agua encerrando la grasa. Aunque los términos \"anfipático\" o \"micelas\" no están explícitos en los fragmentos la explicación dada sobre cómo funcionan estos limpiadores se basa en este principio fundamental de la química de las soluciones y las superficies. Las otras opciones no explican este mecanismo específico."
+            },
+            {
+                "question": "¿qué tipo de compuestos orgánicos contienen el grupo funcional -COOH?",
+                "options": [
+                { "text": "Cetonas.", "id": "a" },
+                { "text": "Alcoholes.", "id": "b" },
+                { "text": "Ácidos carboxílicos.", "id": "c" },
+                { "text": "Aminas.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "El capítulo 16 trata sobre \"Ácidos carboxílicos y ésteres\"57 y específicamente la sección 16.1 sobre \"Ácidos carboxílicos\"57. Los ácidos carboxílicos se definen por el grupo funcional carboxilo (-COOH). Aunque la estructura del grupo funcional no está dibujada en los fragmentos el título del capítulo y la sección lo identifican claramente. Las otras opciones tienen diferentes grupos funcionales (C=O para cetonas42 -OH para alcoholes40 -NH2/-NHR/-NR2 para aminas )."
+            },
+            {
+                "question": "Las fuentes mencionan que el oro nativo (pepitas de oro) se puede encontrar en ríos y minas66. Si se tuviera una pepita ¿qué propiedad física relacionada con la masa y el volumen se podría calcular utilizando información en las fuentes?",
+                "options": [
+                { "text": "Punto de fusión.", "id": "a" },
+                { "text": "Densidad.", "id": "b" },
+                { "text": "Conductividad eléctrica.", "id": "c" },
+                { "text": "Solubilidad.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Una sección en las fuentes presenta una \"Guía para calcular densidad\" y \"Guía para usar densidad\"25... definiendo la densidad como la relación masa/volumen. Un problema relacionado con una pepita de oro pregunta específicamente \"¿cuál sería su volumen en cm3 si fuese oro puro?\" implicando que se podría usar la densidad del oro para calcular el volumen a partir de una masa dada (o viceversa)66. Las otras opciones (punto de fusión66 conductividad eléctrica solubilidad) son propiedades físicas que se pueden medir o conocer para el oro pero la densidad es la propiedad destacada en el contexto de cálculos masa/volumen utilizando las guías proporcionadas."
+            },
+            {
+                "question": "¿qué tipo de enlace prevalece en la arena (SiO2) que funde a altas temperaturas no conduce electricidad como sólido y es muy poco reactiva?",
+                "options": [
+                { "text": "Iónico.", "id": "a" },
+                { "text": "Molecular.", "id": "b" },
+                { "text": "Metálico.", "id": "c" },
+                { "text": "Red covalente.", "id": "d" }
+                ],
+                "correctAnswer": "d",
+                "justification": "Un ejercicio en las fuentes pide describir el tipo de enlace de la arena (SiO2) con estas propiedades: alto punto de fusión no conductora insoluble no reactiva5. Estas propiedades son características de los sólidos de red covalente donde los átomos están unidos por enlaces covalentes en una red tridimensional extendida (a diferencia de los sólidos moleculares con puntos de fusión más bajos o los sólidos iónicos que conducen fundidos). La opción (a) es incorrecta (los iónicos conducen fundidos). La opción (b) es incorrecta (los moleculares tienen puntos de fusión más bajos). La opción (c) es incorrecta (los metálicos son conductores)."
+            },
+            {
+                "question": "Las fuentes mencionan que MasteringChemistry(R) es una herramienta en línea66.... ¿Cuál es uno de los beneficios clave que ofrece a los estudiantes según su descripción?",
+                "options": [
+                { "text": "Reemplaza completamente la necesidad de leer el libro de texto.", "id": "a" },
+                { "text": "Proporciona respuestas automáticas a todas las preguntas sin explicación.", "id": "b" },
+                { "text": "Ofrece tutoriales interactivos y realimentación para ayudar a dominar conceptos y habilidades.", "id": "c" },
+                { "text": "Permite a los estudiantes modificar el contenido del libro de texto.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes describen MasteringChemistry(R) como un programa tutorial y de tareas que \"utiliza el método socrático para orientar a los alumnos mediante técnicas de resolución de problemas ofrecer sugerencias y plantear preguntas sencillas a petición para ayudar a los estudiantes a aprender no sólo a practicar\"68. También menciona \"tutoriales interactivos y el aprendizaje activo\" y que la realimentación inmediata y la asistencia tutorial \"ayudan a los estudiantes a comprender y dominar los conceptos y habilidades\"70. Las opciones (a) (b) y (d) no corresponden a la descripción proporcionada; es un complemento no reemplaza el libro proporciona realimentación y orientación (no solo respuestas) y no permite modificar el contenido del libro."
+            },
+            {
+                "question": "¿qué tipo de información puede obtener un instructor de los diagnósticos de la libreta de calificaciones en MasteringChemistry(R)?",
+                "options": [
+                { "text": "Información sobre la asistencia de los estudiantes a clase.", "id": "a" },
+                { "text": "Un entendimiento del desempeño de la clase e identificación de estudiantes con dificultades.", "id": "b" },
+                { "text": "Un registro de las horas que cada estudiante dedicó a leer el libro.", "id": "c" },
+                { "text": "Sugerencias automáticas para asignar calificaciones finales.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes describen los \"Diagnósticos de la libreta de calificaciones\" en MasteringChemistry(R) como herramientas que \"brindan un entendimiento único del desempeño de la clase y del estudiante\" permitiendo identificar a \"los estudiantes vulnerables\" y resumir \"los problemas más difíciles\"71. Las otras opciones no se mencionan como funciones de esta herramienta."
+            },
+            {
+                "question": "Las ilustraciones \"de macro a micro\" en uno de los textos tienen el propósito de:",
+                "options": [
+                { "text": "Mostrar solo la apariencia externa de los objetos.", "id": "a" },
+                { "text": "Describir procesos químicos a alta temperatura.", "id": "b" },
+                { "text": "Ayudar a establecer la conexión entre el mundo visible y el mundo de átomos y moléculas.", "id": "c" },
+                { "text": "Presentar datos numéricos complejos.", "id": "d" }
+                ],
+                "correctAnswer": "c",
+                "justification": "Las fuentes describen las ilustraciones \"de macro a micro\" como aquellas que \"utilizan fotografías y dibujos para mostrar objetos reconocibles [macro] y su estructura atómica [micro]\"16 y que \"Ayudan a establecer la conexión entre el mundo de los átomos y las moléculas y el mundo macroscópico\"72. Las otras opciones no describen el propósito de este tipo de ilustración."
+            },
+            {
+                "question": "¿por qué el punto de ebullición del agua disminuye a menor presión externa?",
+                "options": [
+                { "text": "Las fuerzas intermoleculares del agua se vuelven más débiles.", "id": "a" },
+                { "text": "La presión de vapor del agua iguala la presión externa a una temperatura más baja.", "id": "b" },
+                { "text": "La energía cinética de las moléculas de agua disminuye.", "id": "c" },
+                { "text": "El agua cambia su composición química.", "id": "d" }
+                ],
+                "correctAnswer": "b",
+                "justification": "Las fuentes preguntan \"¿Cómo afecta al punto de ebullición de un líquido de la presión externa? Explicar la formación de la burbuja\"1. El punto de ebullición se define como la temperatura a la cual la presión de vapor del líquido iguala la presión externa. Si la presión externa es menor se necesita una temperatura más baja para que la presión de vapor alcance ese valor por lo tanto el punto de ebullición disminuye. La opción (a) es incorrecta; las FIM no cambian con la presión externa. La opción (c) es incorrecta; la ebullición ocurre cuando la energía cinética es suficiente para superar las FIM no necesariamente menor. La opción (d) describe un cambio químico no físico."
+            },
+                {
+                    "question": "¿qué tipo de reacción ocurre cuando el ácido clorhídrico (HCl) reacciona con el carbonato de sodio (Na2CO3) para producir cloruro de sodio (NaCl) agua (H2O) y dióxido de carbono (CO2)?",
+                    "options": [
+                    { "text": "Reacción de combustión.", "id": "a" },
+                    { "text": "Reacción de neutralización.", "id": "b" },
+                    { "text": "Reacción redox.", "id": "c" },
+                    { "text": "Reacción de descomposición.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Las fuentes describen la reacción entre un ácido y una base como una \"reacción de neutralización\" que produce sal y agua73. En este caso el HCl actúa como ácido y el Na2CO3 como base produciendo NaCl y H2O. La opción (a) es incorrecta; la combustión implica oxígeno y producción de calor. La opción (c) es incorrecta; no hay transferencia de electrones. La opción (d) es incorrecta; no se descomponen compuestos."
+                },
+                {
+                    "question": "¿qué tipo de cambio de fase es el proceso de transformar hielo (sólido) a -35 C en vapor (gas)?",
+                    "options": [
+                    { "text": "Un solo cambio de fase (sublimación).", "id": "a" },
+                    { "text": "Una combinación de fusión y ebullición.", "id": "b" },
+                    { "text": "Un cambio químico y luego un cambio físico.", "id": "c" },
+                    { "text": "Un proceso que no requiere energía.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Un ejercicio en las fuentes pide calcular el calor necesario para transformar hielo a -35 C en vapor59. Esto implica varios pasos: calentar el hielo hasta su punto de fusión (0 C) fundir el hielo (cambio de sólido a líquido) calentar el agua líquida hasta su punto de ebullición (100 C a presión estándar) y luego hervir el agua (cambio de líquido a gas). Por lo tanto es una combinación de fusión y ebullición (y calentamiento dentro de cada fase). La sublimación es el cambio directo de sólido a gas. No es un cambio químico. Requiere energía59."
+                },
+                {
+                    "question": "En una solución el componente que se disuelve se conoce como:",
+                    "options": [
+                    { "text": "Solvente.", "id": "a" },
+                    { "text": "Soluto.", "id": "b" },
+                    { "text": "Disolvente.", "id": "c" },
+                    { "text": "Fase dispersa.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Un experimento de laboratorio en las fuentes pregunta \"¿Cuáles son los solutos? ¿Por qué?\" después de mezclar sustancias con agua26. Esto implica que el soluto es la sustancia que se disuelve. El solvente (o disolvente) es el componente que disuelve al soluto26. La fase dispersa es un término relacionado con dispersiones coloidales o suspensiones."
+                },
+                {
+                    "question": "¿Qué fenómeno físico causado por las fuerzas adhesivas y cohesivas se menciona en las fuentes en el contexto de las propiedades de los líquidos?",
+                    "options": [
+                    { "text": "Viscosidad.", "id": "a" },
+                    { "text": "Presión de vapor.", "id": "b" },
+                    { "text": "Tensión superficial.", "id": "c" },
+                    { "text": "Humectación y ascenso capilar.", "id": "d" }
+                    ],
+                    "correctAnswer": "d",
+                    "justification": "Mi respuesta previa basada en las fuentes menciona que \"Las fuerzas adhesivas (atracciones entre las moléculas del líquido y una superficie diferente) son responsables de la humectación y el ascenso capilar\" [Basado en mi respuesta anterior citando fuente 1]. También se menciona la tensión superficial (fuerzas de cohesión) [Basado en mi respuesta anterior citando fuente 1] pero la pregunta busca un fenómeno causado por ambas fuerzas (cohesión y adhesión). El ascenso capilar y la humectación involucran el balance entre estas fuerzas. La viscosidad y la presión de vapor se relacionan con las FIM pero no son descritas directamente como resultantes de las fuerzas adhesivas y cohesivas de la misma manera."
+                },
+                {
+                    "question": "¿cómo afectan las fuerzas de atracción intermoleculares relativamente fuertes a la presión de vapor de una sustancia?",
+                    "options": [
+                    { "text": "Aumentan la presión de vapor ya que las moléculas escapan más fácilmente.", "id": "a" },
+                    { "text": "No afectan la presión de vapor.", "id": "b" },
+                    { "text": "Disminuyen la presión de vapor ya que dificultan la vaporización.", "id": "c" },
+                    { "text": "Solo afectan la presión de vapor en estado sólido.", "id": "d" }
+                    ],
+                    "correctAnswer": "c",
+                    "justification": "Mi respuesta previa basada en las fuentes establece que \"Las sustancias con fuerzas de atracción intermoleculares relativamente fuertes tienen una presión de vapor relativamente baja ya que estas fuerzas dificultan la vaporización\" [Basado en mi respuesta anterior citando fuente 1]. Las opciones (a) (b) y (d) contradicen esta relación."
+                },
+                {
+                    "question": "¿Cuál es el término que se refiere a la resistencia de un líquido al flujo influenciada por las fuerzas intermoleculares?",
+                    "options": [
+                    { "text": "Tensión superficial.", "id": "a" },
+                    { "text": "Viscosidad.", "id": "b" },
+                    { "text": "Capilaridad.", "id": "c" },
+                    { "text": "Presión osmótica.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Como se mencionó en la justificación de la pregunta 40 mi respuesta previa basada en las fuentes relaciona la viscosidad con la \"resistencia al flujo\" causada por las FIM [Basado en mi respuesta anterior citando fuente 1]. La tensión superficial es la elasticidad de la superficie [Basado en mi respuesta anterior citando fuente 1]. La capilaridad es el ascenso o descenso de un líquido en un tubo estrecho. La presión osmótica es una propiedad coligativa de las soluciones34."
+                },
+                {
+                    "question": "¿qué propiedad se mide en gramos por mililitro (g/mL) o gramos por centímetro cúbico (g/cm3)?",
+                    "options": [
+                    { "text": "Temperatura.", "id": "a" },
+                    { "text": "Volumen.", "id": "b" },
+                    { "text": "Masa.", "id": "c" },
+                    { "text": "Densidad.", "id": "d" }
+                    ],
+                    "correctAnswer": "d",
+                    "justification": "Una sección de las fuentes trata sobre el cálculo de la densidad y proporciona unidades como g/mL y g/cm325.... La temperatura se mide en grados Celsius Fahrenheit o Kelvin8.... El volumen se mide en litros mililitros cm3 etc.75.... La masa se mide en gramos kilogramos libras etc.75...."
+                },
+                {
+                    "question": "¿qué se puede determinar experimentalmente sobre una solución saturada?",
+                    "options": [
+                    { "text": "La cantidad máxima de soluto que se puede disolver en una cantidad dada de solvente a una temperatura específica.", "id": "a" },
+                    { "text": "Su punto de ebullición en comparación con el solvente puro.", "id": "b" },
+                    { "text": "La presión de vapor del soluto.", "id": "c" },
+                    { "text": "La energía de enlace del solvente.", "id": "d" }
+                    ],
+                    "correctAnswer": "a",
+                    "justification": "El capítulo 8 describe \"soluciones solubilidad saturación\"27. La solubilidad se refiere a la cantidad máxima de soluto que se disuelve. Una solución saturada es aquella que contiene la cantidad máxima de soluto que se puede disolver [Basado en el contexto de solubilidad y saturación en 27 y preguntas sobre soluciones saturadas en 14]. Un ejercicio de \"Explore su mundo\" pide a los estudiantes experimentar con la \"Preparación de azúcar piedra\" para experimentar una disolución saturada cotidiana77. Las opciones (b) y (c) se relacionan con otras propiedades físicas (propiedades coligativas y presión de vapor). La opción (d) se relaciona con fuerzas intramoleculares."
+                },
+                {
+                    "question": "¿Cuál es el concepto central del método de factores de conversión ?",
+                    "options": [
+                    { "text": "Multiplicar cantidades para obtener un resultado más grande.", "id": "a" },
+                    { "text": "Usar equivalencias para cambiar unidades asegurando que las unidades no deseadas se cancelen.", "id": "b" },
+                    { "text": "Sumar todas las cantidades dadas en un problema.", "id": "c" },
+                    { "text": "Convertir números medidos a números exactos.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Las fuentes describen el método de factores de conversión explicando que \"todos los factores que intervienen en el cálculo deben orientarse adecuadamente para garantizar que sus etiquetas (unidades) se anulen o combinen adecuadamente para dar la unidad deseada en el resultado\"78 y que \"Cada factor se ordena para cancelar la unidad anterior hasta que se obtiene la unidad necesaria\"79. Esto se basa en equivalencias80. Las otras opciones no describen el funcionamiento de los factores de conversión."
+                },
+                {
+                    "question": "¿qué se puede decir sobre la solubilidad de los sólidos en líquidos con respecto a la presión?",
+                    "options": [
+                    { "text": "La presión afecta significativamente la solubilidad de sólidos en líquidos.", "id": "a" },
+                    { "text": "La presión no tiene un efecto significativo sobre la solubilidad de sólidos en líquidos.", "id": "b" },
+                    { "text": "La presión solo afecta la solubilidad de los sólidos iónicos.", "id": "c" },
+                    { "text": "La solubilidad de los sólidos aumenta con la presión.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Un ejercicio en las fuentes pregunta \"¿Cuál es el efecto de la presión sobre la solubilidad de gases en líquidos? ¿Y los de los sólidos en líquidos?\"14. El efecto de la presión sobre la solubilidad de los gases es significativo (aumenta con la presión) pero el efecto sobre la solubilidad de sólidos y líquidos es generalmente insignificante. (Nota: Aunque la fuente no da la respuesta explícita en el fragmento la pregunta formulada implica una diferencia en el efecto de la presión sobre gases versus sólidos/líquidos lo cual es un concepto estándar en química de soluciones)."
+                },
+                {
+                    "question": "¿por qué algunas bebidas como la Coca Cola se toman preferentemente frías mientras que el café o té pueden tomarse calientes o fríos?",
+                    "options": [
+                    { "text": "El sabor depende únicamente de la temperatura.", "id": "a" },
+                    { "text": "La solubilidad de los gases en líquidos disminuye con la temperatura.", "id": "b" },
+                    { "text": "La solubilidad de los sólidos en líquidos aumenta con la temperatura.", "id": "c" },
+                    { "text": "El azúcar se disuelve mejor en bebidas frías.", "id": "d" }
+                    ],
+                    "correctAnswer": "b",
+                    "justification": "Una pregunta en las fuentes pide explicar esto14. Las bebidas carbonatadas como la Coca Cola contienen dióxido de carbono (un gas) disuelto bajo presión. La solubilidad de los gases en líquidos disminuye a medida que aumenta la temperatura. Por lo tanto al calentar una bebida carbonatada el gas se vuelve menos soluble y escapa rápidamente perdiendo la carbonatación (el \"gas\"). El café o té no dependen de la solubilidad de un gas para su característica principal. La opción (c) es generalmente cierta para sólidos pero no explica la diferencia entre estas bebidas. La opción (d) es incorrecta; el azúcar generalmente se disuelve mejor en líquidos calientes."
+                }
+
+        ];
+
+        // --- Estado del Quiz ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answerSelected = false;
+
+        // --- Funciones ---
+
+        /**
+         * Carga la pregunta actual en la interfaz.
+         */
+        function loadQuestion() {
+            answerSelected = false;
+            const currentQuestion = quizData[currentQuestionIndex];
+
+            questionNumberEl.textContent = `Pregunta ${currentQuestionIndex + 1} de ${quizData.length}`;
+            questionTextEl.textContent = currentQuestion.question;
+
+            optionsContainerEl.innerHTML = ''; // Limpiar opciones anteriores
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.classList.add('option-btn', 'w-full', 'text-left', 'p-3', 'border', 'border-gray-300', 'rounded-lg', 'hover:bg-gray-100', 'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-400', 'text-gray-700');
+                button.innerHTML = `<span class="font-bold mr-2">${option.id.toUpperCase()}.</span> ${option.text}`;
+                button.dataset.id = option.id;
+                button.addEventListener('click', () => selectAnswer(option.id, button));
+                optionsContainerEl.appendChild(button);
+            });
+
+            feedbackContainerEl.innerHTML = '';
+            feedbackContainerEl.className = 'feedback-container mb-6'; // Resetear clases de feedback
+            nextButtonEl.classList.add('hidden');
+        }
+
+        /**
+         * Procesa la respuesta seleccionada por el usuario.
+         * @param {string} selectedOptionId - El ID de la opción seleccionada.
+         * @param {HTMLButtonElement} selectedButtonEl - El elemento botón que fue clickeado.
+         */
+        function selectAnswer(selectedOptionId, selectedButtonEl) {
+            if (answerSelected) return; // Evitar seleccionar múltiples veces
+            answerSelected = true;
+
+            const currentQuestion = quizData[currentQuestionIndex];
+            const isCorrect = selectedOptionId === currentQuestion.correctAnswer;
+
+            // Deshabilitar todos los botones de opción
+            optionsContainerEl.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+
+            if (isCorrect) {
+                score++;
+                selectedButtonEl.classList.remove('hover:bg-gray-100', 'border-gray-300');
+                selectedButtonEl.classList.add('selected-correct');
+                feedbackContainerEl.innerHTML = '<strong>¡Respuesta Correcta!</strong>';
+                feedbackContainerEl.classList.add('feedback-correct');
+            } else {
+                selectedButtonEl.classList.remove('hover:bg-gray-100', 'border-gray-300');
+                selectedButtonEl.classList.add('selected-incorrect');
+                feedbackContainerEl.innerHTML = `<strong>Respuesta Incorrecta.</strong><br><strong class="mt-2 block">Justificación:</strong> ${currentQuestion.justification}`;
+                feedbackContainerEl.classList.add('feedback-incorrect');
+
+                // Resaltar la respuesta correcta si se eligió una incorrecta
+                const correctButtonEl = optionsContainerEl.querySelector(`.option-btn[data-id="${currentQuestion.correctAnswer}"]`);
+                if (correctButtonEl) {
+                    correctButtonEl.classList.remove('hover:bg-gray-100', 'border-gray-300');
+                    correctButtonEl.classList.add('actual-correct');
+                }
+            }
+            nextButtonEl.classList.remove('hidden');
+        }
+
+        /**
+         * Muestra la siguiente pregunta o el final del quiz.
+         */
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion();
+            } else {
+                showQuizEnd();
+            }
+        }
+
+        /**
+         * Muestra el mensaje de finalización del quiz y la puntuación.
+         */
+        function showQuizEnd() {
+            questionTextEl.parentElement.classList.add('hidden'); // Ocultar cabecera de pregunta
+            optionsContainerEl.classList.add('hidden');
+            feedbackContainerEl.classList.add('hidden');
+            nextButtonEl.classList.add('hidden');
+            quizEndMessageEl.classList.remove('hidden');
+            scoreMessageEl.textContent = `Tu puntuación final es: ${score} de ${quizData.length}.`;
+        }
+        
+        /**
+         * Reinicia el quiz.
+         */
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answerSelected = false;
+            
+            questionTextEl.parentElement.classList.remove('hidden');
+            optionsContainerEl.classList.remove('hidden');
+            feedbackContainerEl.classList.remove('hidden'); // Asegurarse que el contenedor de feedback sea visible
+            feedbackContainerEl.innerHTML = ''; // Limpiar feedback
+            feedbackContainerEl.className = 'feedback-container mb-6'; // Resetear clases de feedback
+
+            quizEndMessageEl.classList.add('hidden');
+            nextButtonEl.classList.add('hidden'); // Ocultar botón "Siguiente" al reiniciar
+
+            loadQuestion();
+        }
+
+        // --- Event Listeners ---
+        nextButtonEl.addEventListener('click', showNextQuestion);
+        restartButtonEl.addEventListener('click', restartQuiz);
+
+        // --- Iniciar el Quiz ---
+        loadQuestion();
+    </script>
+
+</body>
+</html>
